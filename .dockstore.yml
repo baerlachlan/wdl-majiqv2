@@ -1,0 +1,9 @@
+version: 1.2
+workflows:
+  - name: majiq
+    subclass: WDL
+    topic: WDL workflow for majiq v2
+    primaryDescriptorPath: /majiq.wdl
+    readMePath: /README.md
+    authors:
+      - orcid: 0000-0001-5213-3401
