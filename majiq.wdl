@@ -62,7 +62,7 @@ task gtf_to_gff3 {
     }
 
     output {
-        File gff3 = ${out_gff3}
+        File gff3 = "${out_gff3}"
     }
 }
 
