@@ -25,7 +25,7 @@ task gtf_to_gff3 {
     }
 
     command {
-        zcat ${gencode_gtf} | \
+        cat ${gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' | \
             gffread -T -o annotation.gff3
     }
