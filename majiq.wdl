@@ -4,8 +4,10 @@ workflow majiq_v2 {
     input {
         Array[File] bam_g1
         Array[File] bam_g2
-        File gencode_gtf
         String out_dir
+        String name
+        String reference_genome
+        File gencode_gtf
     }
 
     call gtf_to_gff3 {
@@ -19,6 +21,7 @@ workflow majiq_v2 {
             input:
             bam = bam_g1[i],
             out_dir = out_dir,
+            reference_genome = reference_genome,
             gff3 = gtf_to_gff3.gff3,
         }
     }
@@ -28,16 +31,13 @@ workflow majiq_v2 {
             input:
             bam = bam_g2[i],
             out_dir = out_dir,
+            reference_genome = reference_genome,
             gff3 = gtf_to_gff3.gff3,
         }
     }
 
     output {
         Array[File] sj = flatten([majiq_sj_g1.sj, majiq_sj_g2.sj])
-    }
-
-    meta {
-        author: "Lachlan Baer"
     }
 }
 
@@ -47,12 +47,14 @@ task gtf_to_gff3 {
         String out_dir
     }
 
-    String out_gff3 = "~{out_dir}/resources/annotation.gff3"
+    String resources_dir = "~{out_dir}/resources"
+    String gff3 = "~{resources_dir}/annotation.gff3"
 
     command <<<
+        mkdir -p ~{resources_dir}
         cat ~{gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' | \
-            gffread -o ~{out_gff3}
+            gffread -o ~{gff3}
     >>>
 
     runtime {
@@ -63,25 +65,26 @@ task gtf_to_gff3 {
     }
 
     output {
-        File gff3 = "~{out_gff3}"
+        File gff3 = "~{gff3}"
     }
 }
 
 task majiq_sj {
     input {
         File bam
+        File bai = "~{bam}.bai"
         String out_dir
+        String reference_genome
         File gff3
     }
 
-    String bam_dir = basename(bam, basename(bam))
     String sample = basename(bam, ".bam")
     String sj_file = "~{sample}.sj"
 
     command <<<
-        mkdir tmp_dir
-        echo "[info]\nbamdirs=~{bam_dir}\ngenome=~{gff3}\n[experiments]\nsample=~{sample}" > majiq.conf
-        majiq build -j 1 -c majiq.conf -o tmp_dir ~{gff3} --junc-files-only
+        mkdir -p ~{out_dir}/sj
+        echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{reference_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
+        majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
         mv tmp_dir/~{sj_file} ~{out_dir}/sj
     >>>
 
