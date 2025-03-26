@@ -50,9 +50,9 @@ task gtf_to_gff3 {
     String out_gff3 = "${out_dir}/resources/annotation.gff3"
 
     command <<<
-        echo -e "cat ${gencode_gtf} | \
+        cat ~{gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' | \
-            gffread -o ${out_gff3}"
+            gffread -o ~{out_gff3}
     >>>
 
     runtime {
@@ -80,9 +80,9 @@ task majiq_sj {
 
     command <<<
         mkdir tmp_dir
-        echo "[info]\nbamdirs=${bam_dir}\ngenome=${gff3}\n[experiments]\nsample=${sample}" > majiq.conf
+        echo "[info]\nbamdirs=~{bam_dir}\ngenome=~{gff3}\n[experiments]\nsample=~{sample}" > majiq.conf
         majiq build -j 1 -c majiq.conf -o tmp_dir ${gff3} --junc-files-only
-        mv tmp_dir/${sj_file} ${out_dir}/sj
+        mv tmp_dir/~{sj_file} ~{out_dir}/sj
     >>>
 
     runtime {
