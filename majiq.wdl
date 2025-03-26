@@ -10,29 +10,30 @@ workflow majiq_v2 {
 
     call gtf_to_gff3 {
         input:
-        gencode_gtf = gencode_gtf
+        gencode_gtf = gencode_gtf,
+        out_dir = out_dir,
     }
 
     scatter(i in range(length(bam_g1))) {
         call majiq_sj as majiq_sj_g1 {
             input:
-            bam = bam_g1[i]
-            out_dir = out_dir
-            gff3 = gtf_to_gff3.gff3
+            bam = bam_g1[i],
+            out_dir = out_dir,
+            gff3 = gtf_to_gff3.gff3,
         }
     }
 
     scatter(i in range(length(bam_g2))) {
         call majiq_sj as majiq_sj_g2 {
             input:
-            bam = bam_g2[i]
-            out_dir = out_dir
-            gff3 = gtf_to_gff3.gff3
+            bam = bam_g2[i],
+            out_dir = out_dir,
+            gff3 = gtf_to_gff3.gff3,
         }
     }
 
     output {
-        File sj = flatten([majiq_sj_g1.sj, majiq_sj_g2.sj])
+        Array[File] sj = flatten([majiq_sj_g1.sj, majiq_sj_g2.sj])
     }
 
     meta {
@@ -74,14 +75,14 @@ task majiq_sj {
     }
 
     String bam_dir = basename(bam, basename(bam))
-    String sample = replace(basename(bam), ".bam", "")
+    String sample = basename(bam, ".bam")
     String sj_file = "${sample}.sj"
 
     command <<<
         mkdir tmp_dir
         echo "[info]\nbamdirs=${bam_dir}\ngenome=${gff3}\n[experiments]\nsample=${sample}" > majiq.conf
-		majiq build -j 1 -c majiq.conf -o tmp_dir ${gff3} --junc-files-only
-		mv tmp_dir/${sj_file} ${out_dir}/sj
+        majiq build -j 1 -c majiq.conf -o tmp_dir ${gff3} --junc-files-only
+        mv tmp_dir/${sj_file} ${out_dir}/sj
     >>>
 
     runtime {
