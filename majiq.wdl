@@ -47,7 +47,7 @@ task gtf_to_gff3 {
         String out_dir
     }
 
-    String out_gff3 = "${out_dir}/resources/annotation.gff3"
+    String out_gff3 = "~{out_dir}/resources/annotation.gff3"
 
     command <<<
         cat ~{gencode_gtf} | \
@@ -63,7 +63,7 @@ task gtf_to_gff3 {
     }
 
     output {
-        File gff3 = "${out_gff3}"
+        File gff3 = "~{out_gff3}"
     }
 }
 
@@ -76,12 +76,12 @@ task majiq_sj {
 
     String bam_dir = basename(bam, basename(bam))
     String sample = basename(bam, ".bam")
-    String sj_file = "${sample}.sj"
+    String sj_file = "~{sample}.sj"
 
     command <<<
         mkdir tmp_dir
         echo "[info]\nbamdirs=~{bam_dir}\ngenome=~{gff3}\n[experiments]\nsample=~{sample}" > majiq.conf
-        majiq build -j 1 -c majiq.conf -o tmp_dir ${gff3} --junc-files-only
+        majiq build -j 1 -c majiq.conf -o tmp_dir ~{gff3} --junc-files-only
         mv tmp_dir/~{sj_file} ~{out_dir}/sj
     >>>
 
@@ -93,6 +93,6 @@ task majiq_sj {
     }
 
     output {
-        File sj = "${out_dir}/sj/${sj_file}"
+        File sj = "~{out_dir}/sj/~{sj_file}"
     }
 }
