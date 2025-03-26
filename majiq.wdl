@@ -50,9 +50,9 @@ task gtf_to_gff3 {
     String out_gff3 = "${out_dir}/resources/annotation.gff3"
 
     command <<<
-        cat ${gencode_gtf} | \
+        echo -e "cat ${gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' | \
-            gffread -T -o ${out_gff3}
+            gffread -o ${out_gff3}"
     >>>
 
     runtime {
