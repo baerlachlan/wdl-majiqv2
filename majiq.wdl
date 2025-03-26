@@ -52,13 +52,19 @@ task gtf_to_gff3 {
 
     command <<<
         mkdir -p ~{resources_dir}
+        ## Create the default config file for AGAT
+        agat config --expose
+        ## Turn off checks etc
+        sed -i -E '/^(check|remove_orphan)/s/:.*/: false/' agat_config.yaml
+        ## Patch GTF to use Ensembl chromosome names
         cat ~{gencode_gtf} | \
-            sed 's/chrM/chrMT/;s/chr//' | \
-            gffread -o ~{gff3}
+            sed 's/chrM/chrMT/;s/chr//' > patched.gtf
+        ## Convert GTF to GFF3
+        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3}
     >>>
 
     runtime {
-        docker: "baerlachlan/gffread:v0.12.7"
+        docker: "quay.io/biocontainers/agat:1.4.2--pl5321hdfd78af_0"
         cpu: "1"
         memory: "2 GB"
         disks: "local-disk 4 HDD"
@@ -85,7 +91,7 @@ task majiq_sj {
         mkdir -p ~{out_dir}/sj
         echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{reference_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
         majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
-        mv tmp_dir/~{sj_file} ~{out_dir}/sj
+        mv ~{sj_file} ~{out_dir}/sj
     >>>
 
     runtime {
