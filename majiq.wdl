@@ -5,15 +5,25 @@ workflow majiq_v2 {
         Array[File] bam_g1
         Array[File] bam_g2
         String out_dir
-        String name
         String reference_genome
         File gencode_gtf
+        ## Debug
+        Int gtf_to_gff3_cpu = 1
+        String gtf_to_gff3_mem = "4 GB"
+        String gtf_to_gff3_disk = "local-disk 4 HDD"
+        Int majiq_sj_cpu = 1
+        String majiq_sj_mem = "4 GB"
+        String majiq_sj_disk = "local-disk 4 HDD"
     }
 
     call gtf_to_gff3 {
         input:
         gencode_gtf = gencode_gtf,
         out_dir = out_dir,
+        ## Debug
+        gtf_to_gff3_cpu = gtf_to_gff3_cpu,
+        gtf_to_gff3_mem = gtf_to_gff3_mem,
+        gtf_to_gff3_disk = gtf_to_gff3_disk,
     }
 
     scatter(i in range(length(bam_g1))) {
@@ -23,6 +33,10 @@ workflow majiq_v2 {
             out_dir = out_dir,
             reference_genome = reference_genome,
             gff3 = gtf_to_gff3.gff3,
+            ## Debug
+            majiq_sj_cpu = majiq_sj_cpu,
+            majiq_sj_mem = majiq_sj_mem,
+            majiq_sj_disk = majiq_sj_disk,
         }
     }
 
@@ -33,6 +47,10 @@ workflow majiq_v2 {
             out_dir = out_dir,
             reference_genome = reference_genome,
             gff3 = gtf_to_gff3.gff3,
+            ## Debug
+            majiq_sj_cpu = majiq_sj_cpu,
+            majiq_sj_mem = majiq_sj_mem,
+            majiq_sj_disk = majiq_sj_disk,
         }
     }
 
@@ -45,10 +63,14 @@ task gtf_to_gff3 {
     input {
         File gencode_gtf
         String out_dir
+        ## Debug
+        Int gtf_to_gff3_cpu
+        String gtf_to_gff3_mem
+        String gtf_to_gff3_disk
     }
 
     String resources_dir = "~{out_dir}/resources"
-    String gff3 = "~{resources_dir}/annotation.gff3"
+    String gff3_out = "~{resources_dir}/annotation.gff3"
 
     command <<<
         mkdir -p ~{resources_dir}
@@ -60,18 +82,18 @@ task gtf_to_gff3 {
         cat ~{gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' > patched.gtf
         ## Convert GTF to GFF3
-        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3}
+        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3_out}
     >>>
 
     runtime {
         docker: "quay.io/biocontainers/agat:1.4.2--pl5321hdfd78af_0"
-        cpu: "1"
-        memory: "2 GB"
-        disks: "local-disk 4 HDD"
+        cpu: gtf_to_gff3_cpu
+        memory: gtf_to_gff3_mem
+        disks: gtf_to_gff3_disk
     }
 
     output {
-        File gff3 = "~{gff3}"
+        File gff3 = "~{gff3_out}"
     }
 }
 
@@ -82,6 +104,10 @@ task majiq_sj {
         String out_dir
         String reference_genome
         File gff3
+        ## Debug
+        Int majiq_sj_cpu
+        String majiq_sj_mem
+        String majiq_sj_disk
     }
 
     String sample = basename(bam, ".bam")
@@ -96,9 +122,9 @@ task majiq_sj {
 
     runtime {
         docker: "baerlachlan/majiq:v2.5.8"
-        cpu: "1"
-        memory: "4 GB"
-        disks: "local-disk 4 HDD"
+        cpu: majiq_sj_cpu
+        memory: majiq_sj_mem
+        disks: majiq_sj_disk
     }
 
     output {
