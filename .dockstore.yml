@@ -1,9 +1,23 @@
 version: 1.2
 workflows:
-  - name: majiq
+  - name: majiq_sj
     subclass: WDL
-    topic: WDL workflow for majiq v2
-    primaryDescriptorPath: /majiq.wdl
+    topic: WDL workflow to create splice junction files with majiq v2
+    primaryDescriptorPath: /majiq_sj.wdl
+    readMePath: /README.md
+    authors:
+      - orcid: 0000-0001-5213-3401
+  - name: gencode_gtf_to_gff3
+    subclass: WDL
+    topic: WDL workflow to convert GENCODE GTF to GFF3
+    primaryDescriptorPath: /gencode_gtf_to_gff3.wdl
+    readMePath: /README.md
+    authors:
+      - orcid: 0000-0001-5213-3401
+  - name: test_gsutil
+    subclass: WDL
+    topic: WDL workflow to test gsutil
+    primaryDescriptorPath: /test_gsutil.wdl
     readMePath: /README.md
     authors:
       - orcid: 0000-0001-5213-3401
