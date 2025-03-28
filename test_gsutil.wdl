@@ -2,7 +2,7 @@ version 1.0
 
 workflow test_gsutil {
 	input {
-		String gcs_path
+		String? gcs_path
 	}
 
 	call cp_test {
@@ -17,7 +17,7 @@ workflow test_gsutil {
 
 task cp_test {
     input {
-        String gcs_path
+        String? gcs_path
 	}
 
 	String test_dir = "test_dir"
@@ -26,8 +26,10 @@ task cp_test {
 	command <<<
 		mkdir ~{test_dir}
 		touch ~{test_dir}/~{test_file}
-		gsutil cp -r ~{test_dir} ~{gcs_path}/~{test_dir}
-		gsutil cp ~{test_dir}/~{test_file} ~{gcs_path}/~{test_file}
+		if [[ -n ~{gcs_path} ]]; then
+			gsutil cp -r ~{test_dir} ~{gcs_path}/~{test_dir}
+			gsutil cp ~{test_dir}/~{test_file} ~{gcs_path}/~{test_file}
+		fi
 	>>>
 
     runtime {
