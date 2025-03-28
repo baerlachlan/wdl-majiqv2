@@ -5,17 +5,18 @@ workflow majiq_sj {
         Array[File] bam
 		Array[File]? bai
         File gff3
-        String proj_dir
-        String reference_genome
+        String ref_genome
+        String dest_gs_uri = "NULL"
     }
 
     scatter(i in range(length(bam))) {
         call splice_junctions {
             input:
             bam = bam[i],
-            proj_dir = proj_dir,
-            reference_genome = reference_genome,
+            bai = select_first([bai, "~{bam}.bai"]),
             gff3 = gff3,
+            ref_genome = ref_genome,
+            dest_gs_uri = dest_gs_uri,
         }
     }
 
@@ -27,28 +28,27 @@ workflow majiq_sj {
 task splice_junctions {
     input {
         File bam
-        File bai = "~{bam}.bai"
+        File bai
         File gff3
-        String proj_dir
-        String reference_genome
+        String ref_genome
+        String dest_gs_uri
     }
 
     String sample = basename(bam, ".bam")
-    String sj_file = "~{sample}.sj"
-	String sj_out = "~{proj_dir}/sj/~{sj_file}"
+    String sj = "~{sample}.sj"
 
     command <<<
-        mkdir -p ~{proj_dir}/sj
-        echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{reference_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
+        echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
         majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
-        mv ~{sj_file} ~{sj_out}
+        if [[ ~{dest_gs_uri} != "NULL" ]]; then
+            gsutil cp ~{sj} ~{dest_gs_uri}
     >>>
 
 	## Determine disk request based on input
 	Int input_size_gb = ceil(size(bam, "GB")) +
 		ceil(size(bai, "GB")) +
 		ceil(size(gff3, "GB"))
-	Int disk_size_gb = input_size_gb + 5  # Add a buffer
+	Int disk_size_gb = input_size_gb + 5  # Add buffer
 
     runtime {
         docker: "baerlachlan/majiq:v2.5.8"
@@ -58,6 +58,6 @@ task splice_junctions {
     }
 
     output {
-        File sj = sj_out
+        File sj = sj
     }
 }

@@ -3,7 +3,7 @@ version 1.0
 workflow gencode_gtf_to_gff3 {
     input {
         File gencode_gtf
-        String out_dir
+        String dest_gs_uri = "NULL"
         String machine_mem = "32 GB"
         String machine_disk = "local-disk 8 HDD"
     }
@@ -11,28 +11,28 @@ workflow gencode_gtf_to_gff3 {
     call gtf_to_gff3 {
         input:
         gencode_gtf = gencode_gtf,
-        out_dir = out_dir,
-		machine_mem = machine_mem,
-		machine_disk = machine_disk,
+        dest_gs_uri = dest_gs_uri,
+        machine_mem = machine_mem,
+        machine_disk = machine_disk,
     }
 
     output {
-        Array[File] gff3 = gtf_to_gff3.gff3
+        File gff3 = gtf_to_gff3.gff3
     }
 }
 
 task gtf_to_gff3 {
     input {
         File gencode_gtf
-        String out_dir
+        String dest_gs_uri
         String machine_mem
         String machine_disk
     }
 
-    String gff3_out = "~{out_dir}/annotation.gff3"
+    String ref_name = basename(gencode_gtf, ".gtf")
+    String gff3 = "~{ref_name}.gff3"
 
     command <<<
-        mkdir -p ~{out_dir}
         ## Create the default config file for AGAT
         agat config --expose
         ## Turn off checks etc
@@ -41,17 +41,20 @@ task gtf_to_gff3 {
         cat ~{gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' > patched.gtf
         ## Convert GTF to GFF3
-        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3_out}
+        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3}
+        ## Copy to gcloud storage
+        if [[ ~{dest_gs_uri} != "NULL" ]]; then
+            gsutil cp ~{gff3} ~{dest_gs_uri}
     >>>
 
     runtime {
-        docker: "quay.io/biocontainers/agat:1.4.2--pl5321hdfd78af_0"
+        docker: "baerlachlan/agat:v1.4.2"
         cpu: 1
         memory: machine_mem
         disks: machine_disk
     }
 
     output {
-        File gff3 = "~{gff3_out}"
+        File gff3 = "~{gff3}"
     }
 }
