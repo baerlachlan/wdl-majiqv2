@@ -45,6 +45,7 @@ task gtf_to_gff3 {
         ## Copy to gcloud storage
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
             gsutil cp ~{gff3} ~{dest_gs_uri}
+        fi
     >>>
 
     runtime {

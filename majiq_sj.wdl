@@ -3,7 +3,7 @@ version 1.0
 workflow majiq_sj {
     input {
         Array[File] bam
-		Array[File]? bai
+        Array[File]? bai
         File gff3
         String ref_genome
         String dest_gs_uri = "NULL"
@@ -13,7 +13,7 @@ workflow majiq_sj {
         call splice_junctions {
             input:
             bam = bam[i],
-            bai = select_first([bai, "~{bam}.bai"]),
+            # bai = select_first([bai, "~{bam}.bai"]),
             gff3 = gff3,
             ref_genome = ref_genome,
             dest_gs_uri = dest_gs_uri,
@@ -42,13 +42,14 @@ task splice_junctions {
         majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
             gsutil cp ~{sj} ~{dest_gs_uri}
+        fi
     >>>
 
-	## Determine disk request based on input
-	Int input_size_gb = ceil(size(bam, "GB")) +
-		ceil(size(bai, "GB")) +
-		ceil(size(gff3, "GB"))
-	Int disk_size_gb = input_size_gb + 5  # Add buffer
+    ## Determine disk request based on input
+    Int input_size_gb = ceil(size(bam, "GB")) +
+        ceil(size(bai, "GB")) +
+        ceil(size(gff3, "GB"))
+    Int disk_size_gb = input_size_gb + 5  # Add buffer
 
     runtime {
         docker: "baerlachlan/majiq:v2.5.8"
