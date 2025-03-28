@@ -5,26 +5,29 @@ workflow test_gsutil {
 		String gcs_path
 	}
 
-	call cp_testfile {
+	call cp_test {
 		input:
 		gcs_path = gcs_path
 	}
 
 	output {
-		File out_file = cp_testfile.out_file
+		File test_file = cp_test.test_file
 	}
 }
 
-task cp_testfile {
+task cp_test {
     input {
         String gcs_path
 	}
 
-	String out_file = "~{gcs_path}/test.file"
+	String test_dir = "test_dir"
+	String test_file = "test.file"
 
 	command <<<
-		touch test.file
-		gsutil cp test.file ~{out_file}
+		mkdir ~{test_dir}
+		touch ~{test_dir}/~{test_file}
+		gsutil cp -r ~{test_dir} ~{gcs_path}/~{test_dir}
+		gsutil cp ~{test_dir}/~{test_file} ~{gcs_path}/~{test_file}
 	>>>
 
     runtime {
@@ -35,6 +38,6 @@ task cp_testfile {
     }
 
 	output {
-		File out_file = out_file
+		File test_file = "~{test_dir}/~{test_file}"
 	}
 }
