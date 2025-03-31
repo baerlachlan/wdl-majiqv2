@@ -35,7 +35,7 @@ task splice_junctions {
     }
 
     ## Determine disk request based on input
-    Int input_size_gb = ceil(size(bam, "GB")) + ceil(size(bai, "GB")) + ceil(size(gff3, "GB"))
+    Int input_size_gb = ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
     Int disk_size_gb = input_size_gb + 5  # Add buffer
     String sample = basename(bam, ".bam")
     String sj = "~{sample}.sj"
