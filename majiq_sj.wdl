@@ -13,7 +13,7 @@ workflow majiq_sj {
         call splice_junctions {
             input:
             bam = bam[i],
-            bai = select_first([bai, "~{bam}.bai"]),
+            bai = select_first([bai, "~{bam[i]}.bai"]),
             gff3 = gff3,
             ref_genome = ref_genome,
             dest_gs_uri = dest_gs_uri,
