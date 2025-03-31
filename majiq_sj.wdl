@@ -36,6 +36,11 @@ task splice_junctions {
 
     String sample = basename(bam, ".bam")
     String sj = "~{sample}.sj"
+    ## Determine disk request based on input
+    Int input_size_gb = ceil(size(bam, "GB")) +
+        ceil(size(bai, "GB")) +
+        ceil(size(gff3, "GB"))
+    Int disk_size_gb = input_size_gb + 5  # Add buffer
 
     command <<<
         echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
@@ -44,12 +49,6 @@ task splice_junctions {
             gsutil cp ~{sj} ~{dest_gs_uri}
         fi
     >>>
-
-    ## Determine disk request based on input
-    Int input_size_gb = ceil(size(bam, "GB")) +
-        ceil(size(bai, "GB")) +
-        ceil(size(gff3, "GB"))
-    Int disk_size_gb = input_size_gb + 5  # Add buffer
 
     runtime {
         docker: "baerlachlan/majiq:v2.5.8"
