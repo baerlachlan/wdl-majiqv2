@@ -54,7 +54,7 @@ task splice_junctions {
         docker: "baerlachlan/majiq:v2.5.8"
         cpu: 1
         memory: "4 GB"
-        disks: "local-disk " + disk_size_gb + " HDD"
+        disks: "local-disk ~{disk_size_gb} HDD"
     }
 
     output {
