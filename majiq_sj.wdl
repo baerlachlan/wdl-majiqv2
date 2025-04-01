@@ -7,6 +7,8 @@ workflow majiq_sj {
         File gff3
         String ref_genome
         String dest_gs_uri = "NULL"
+        String remove_suffix = ""
+        Boolean compress = true
     }
 
     scatter(i in range(length(bam))) {
@@ -17,6 +19,8 @@ workflow majiq_sj {
             gff3 = gff3,
             ref_genome = ref_genome,
             dest_gs_uri = dest_gs_uri,
+            remove_suffix = remove_suffix,
+            compress = compress,
         }
     }
 
@@ -32,19 +36,25 @@ task splice_junctions {
         File gff3
         String ref_genome
         String dest_gs_uri
+        String remove_suffix
+        Boolean compress
     }
 
     ## Determine disk request based on input
     Int input_size_gb = ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
     Int disk_size_gb = input_size_gb + 5  # Add buffer
     String sample = basename(bam, ".bam")
-    String sj = "~{sample}.sj"
+    String id = basename(sample, remove_suffix)
+    String sj_out = if compress then "~{id}.sj.gz" else "~{id}.sj"
 
     command <<<
         echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
         majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
+        if [[ ~{compress} = "true" ]]; then
+            gzip ~{id}.sj
+        fi
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
-            gsutil cp ~{sj} ~{dest_gs_uri}
+            gsutil cp ~{sj_out} ~{dest_gs_uri}
         fi
     >>>
 
@@ -56,6 +66,6 @@ task splice_junctions {
     }
 
     output {
-        File sj = sj
+        File sj = sj_out
     }
 }
