@@ -50,6 +50,7 @@ task splice_junctions {
     command <<<
         echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
         majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
+        mv ~{sample}.sj ~{id}.sj
         if [[ ~{compress} = "true" ]]; then
             gzip ~{id}.sj
         fi
