@@ -7,7 +7,7 @@ workflow majiq_sj {
         File gff3
         String ref_genome
         String dest_gs_uri = "NULL"
-        String remove_suffix = ""
+        String remove_suffix = ".bam"
         Boolean compress = true
     }
 
@@ -44,7 +44,7 @@ task splice_junctions {
     Int input_size_gb = ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
     Int disk_size_gb = input_size_gb + 5  # Add buffer
     String sample = basename(bam, ".bam")
-    String id = basename(sample, remove_suffix)
+    String id = basename(bam, remove_suffix)
     String sj_out = if compress then "~{id}.sj.gz" else "~{id}.sj"
 
     command <<<
