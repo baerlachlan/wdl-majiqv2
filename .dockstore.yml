@@ -7,6 +7,13 @@ workflows:
     readMePath: /README.md
     authors:
       - orcid: 0000-0001-5213-3401
+  - name: majiq_build
+    subclass: WDL
+    topic: WDL workflow to create splicegraph and majiq files with majiq v2
+    primaryDescriptorPath: /majiq_sj.wdl
+    readMePath: /README.md
+    authors:
+      - orcid: 0000-0001-5213-3401
   - name: gencode_gtf_to_gff3
     subclass: WDL
     topic: WDL workflow to convert GENCODE GTF to GFF3
