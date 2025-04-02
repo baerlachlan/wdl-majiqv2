@@ -10,7 +10,7 @@ workflows:
   - name: majiq_build
     subclass: WDL
     topic: WDL workflow to create splicegraph and majiq files with majiq v2
-    primaryDescriptorPath: /majiq_sj.wdl
+    primaryDescriptorPath: /majiq_build.wdl
     readMePath: /README.md
     authors:
       - orcid: 0000-0001-5213-3401
