@@ -54,6 +54,12 @@ task splice_junctions {
         [experiments]
         sample=~{sample}
         EOF
+        echo "New settings.ini:"
+        cat settings.ini
+
+        echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > old_settings.ini
+        echo "Old settings.ini:"
+        cat old_settings.ini
 
         majiq build -j 1 -c settings.ini -o . ~{gff3} --junc-files-only
         mv ~{sample}.sj ~{id}.sj
