@@ -3,7 +3,6 @@ version 1.0
 workflow majiq_sj {
     input {
         Array[File] bam
-        Array[File]? bai
         File gff3
         String ref_genome
         String dest_gs_uri = "NULL"
@@ -15,7 +14,7 @@ workflow majiq_sj {
         call splice_junctions {
             input:
             bam = bam[i],
-            bai = select_first([bai[i], "~{bam[i]}.bai"]),
+            bai = "~{bam[i]}.bai",
             gff3 = gff3,
             ref_genome = ref_genome,
             dest_gs_uri = dest_gs_uri,
@@ -32,7 +31,7 @@ workflow majiq_sj {
 task splice_junctions {
     input {
         File bam
-        File? bai
+        File bai
         File gff3
         String ref_genome
         String dest_gs_uri

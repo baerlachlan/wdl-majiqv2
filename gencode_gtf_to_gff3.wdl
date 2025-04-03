@@ -30,7 +30,7 @@ task gtf_to_gff3 {
     }
 
     String ref_name = basename(gencode_gtf, ".gtf")
-    String gff3 = "~{ref_name}.gff3"
+    String gff3_out = "~{ref_name}.gff3"
 
     command <<<
         ## Create the default config file for AGAT
@@ -41,10 +41,10 @@ task gtf_to_gff3 {
         cat ~{gencode_gtf} | \
             sed 's/chrM/chrMT/;s/chr//' > patched.gtf
         ## Convert GTF to GFF3
-        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3}
+        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3_out}
         ## Copy to gcloud storage
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
-            gsutil cp ~{gff3} ~{dest_gs_uri}
+            gsutil cp ~{gff3_out} ~{dest_gs_uri}
         fi
     >>>
 
@@ -56,6 +56,6 @@ task gtf_to_gff3 {
     }
 
     output {
-        File gff3 = "~{gff3}"
+        File gff3 = "~{gff3_out}"
     }
 }
