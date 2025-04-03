@@ -7,6 +7,7 @@ workflow majiq_build {
         File gff3
         String ref_genome
         String dest_gs_uri = "NULL"
+        String remove_bam_suffix = ".bam"
     }
 
     call build {
@@ -16,6 +17,7 @@ workflow majiq_build {
         gff3 = gff3,
         ref_genome = ref_genome,
         dest_gs_uri = dest_gs_uri,
+        remove_bam_suffix = remove_bam_suffix,
     }
 
     output {
@@ -31,21 +33,23 @@ task build {
         File gff3
         String ref_genome
         String dest_gs_uri
+        String remove_bam_suffix
     }
 
     ## Determine disk request based on input
-    Int input_size_gb = ceil(size(sj, "GB")) + ceil(size(gff3, "GB"))
-    Int disk_size_gb = input_size_gb + 10  # Add buffer
+    Int input_size_gb = ceil(size(sj, "GB")) + ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
+    Int disk_size_gb = input_size_gb + length(bam) + 10  # Add 1GB buffer for each sample output plus some extra
 
     command <<<
-        for f in ~{sep=" " sj}; do
-            basename "${f}" .sj
+        for f in ~{sep=" " bam}; do
+            mv ${f} ${f%~{remove_bam_suffix}}.bam
+            basename ${f} ~{remove_bam_suffix}
         done | sort | uniq | paste -sd, - > samples.txt
         for f in ~{sep=" " bam}; do
-            dirname "${f}"
+            dirname ${f}
         done | sort | uniq | paste -sd, - > bam_dirs.txt
         for f in ~{sep=" " sj}; do
-            dirname "${f}"
+            dirname ${f}
         done | sort | uniq | paste -sd, - > sj_dirs.txt
 
         cat << 'EOF' > settings.ini
@@ -65,6 +69,7 @@ task build {
 
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
             gsutil cp *.majiq ~{dest_gs_uri}
+            gsutil cp *.sj ~{dest_gs_uri}
             gsutil cp splicegraph.sql ~{dest_gs_uri}
             gsutil cp majiq.log ~{dest_gs_uri}
         fi
