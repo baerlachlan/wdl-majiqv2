@@ -3,9 +3,7 @@ version 1.0
 workflow majiq_build {
     input {
         Array[File] bam
-        Array[String] bam_dirs
         Array[File] sj
-        Array[String] sj_dirs
         File gff3
         String ref_genome
         String dest_gs_uri = "NULL"
@@ -14,9 +12,7 @@ workflow majiq_build {
     call build {
         input:
         bam = bam,
-        bam_dirs = bam_dirs,
         sj = sj,
-        sj_dirs = sj_dirs,
         gff3 = gff3,
         ref_genome = ref_genome,
         dest_gs_uri = dest_gs_uri,
@@ -31,9 +27,7 @@ workflow majiq_build {
 task build {
     input {
         Array[File] bam
-        Array[String] bam_dirs
         Array[File] sj
-        Array[String] sj_dirs
         File gff3
         String ref_genome
         String dest_gs_uri
@@ -44,39 +38,31 @@ task build {
     Int disk_size_gb = input_size_gb + 10  # Add buffer
 
     command <<<
-        samples=""
-        for i in ~{sj}; do
-            bn=$(basename ${i} .sj)
-            if [ -z ${samples} ]; then
-                samples="${bn}"
-            else
-                samples="${samples},${bn}"
-            fi
-        done
-        bam_dirs=""
-        for i in ~{bam_dirs}; do
-            bn=$(basename ${i} .sj)
-            if [ -z ${bam_dirs} ]; then
-                bam_dirs="${bn}"
-            else
-                bam_dirs="${bam_dirs},${bn}"
-            fi
-        done
-        sj_dirs=""
-        for i in ~{sj_dirs}; do
-            bn=$(basename ${i} .sj)
-            if [ -z ${sj_dirs} ]; then
-                sj_dirs="${bn}"
-            else
-                sj_dirs="${sj_dirs},${bn}"
-            fi
-        done
-        echo -e "[info]\nbamdirs=${bam_dirs}\nsjdirs=${sj_dirs}\ngenome=~{ref_genome}\n[experiments]\nsamples=${samples}" > settings.ini
+        for f in ~{sep=" " sj}; do
+            basename "${f}" .sj
+        done | sort | uniq | paste -sd, - > samples.txt
+        for f in ~{sep=" " bam}; do
+            dirname "${f}"
+        done | sort | uniq | paste -sd, - > bam_dirs.txt
+        for f in ~{sep=" " sj}; do
+            dirname "${f}"
+        done | sort | uniq | paste -sd, - > sj_dirs.txt
+
+        cat << 'EOF' > settings.ini
+        [info]
+        bamdirs=$(cat bam_dirs.txt)
+        sjdirs=$(cat sj_dirs.txt)
+        genome=~{ref_genome}
+        [experiments]
+        samples=$(cat samples.txt)
+        EOF
+
         majiq build -j 4 -c settings.ini -o . ~{gff3} --incremental \
         --disable-ir --disable-denovo --disable-denovo-ir \
         --min-experiments 0.5 --min-intronic-cov 0.1 --min-denovo 5 --minreads 10 --minpos 3 \
         --simplify-denovo 0 --simplify-annotated 0 --simplify-ir 0 --simplify 0.01 \
         --m 30 --irnbins 0.5
+
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
             gsutil cp *.majiq ~{dest_gs_uri}
             gsutil cp splicegraph.sql ~{dest_gs_uri}

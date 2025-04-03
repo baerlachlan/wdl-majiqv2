@@ -48,9 +48,17 @@ task splice_junctions {
     String sj_out = if compress then "~{id}.sj.gz" else "~{id}.sj"
 
     command <<<
-        echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > majiq.conf
-        majiq build -j 1 -c majiq.conf -o . ~{gff3} --junc-files-only
+        cat << 'EOF' > settings.ini
+        [info]
+        bamdirs=$(dirname ~{bam})
+        genome=~{ref_genome}
+        [experiments]
+        sample=~{sample}
+        EOF
+
+        majiq build -j 1 -c settings.ini -o . ~{gff3} --junc-files-only
         mv ~{sample}.sj ~{id}.sj
+
         if [[ ~{compress} = "true" ]]; then
             gzip ~{id}.sj
         fi
