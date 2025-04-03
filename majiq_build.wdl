@@ -38,7 +38,7 @@ task build {
 
     ## Determine disk request based on input
     Int input_size_gb = ceil(size(sj, "GB")) + ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
-    Int disk_size_gb = input_size_gb + length(bam) + 10  # Add 1GB buffer for each sample output plus some extra
+    Int disk_size_gb = input_size_gb + length(bam) * 5 + 50  # Add 5GB buffer for each sample output plus some extra
 
     command <<<
         for f in ~{sep=" " bam}; do
