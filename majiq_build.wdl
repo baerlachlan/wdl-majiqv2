@@ -45,14 +45,20 @@ task build {
             mv ${f} ${f%~{remove_bam_suffix}}.bam
             basename ${f} ~{remove_bam_suffix}
         done | sort | uniq | paste -sd, - > samples.txt
+        echo "samples are:"
+        cat samples.txt
         for f in ~{sep=" " bam}; do
             dirname ${f}
         done | sort | uniq | paste -sd, - > bam_dirs.txt
+        echo "bam_dirs are:"
+        cat bam_dirs.txt
         for f in ~{sep=" " sj}; do
             dirname ${f}
         done | sort | uniq | paste -sd, - > sj_dirs.txt
+        echo "sj_dirs are:"
+        cat sj_dirs.txt
 
-        cat << 'EOF' > settings.ini
+        cat << EOF > settings.ini
         [info]
         bamdirs=$(cat bam_dirs.txt)
         sjdirs=$(cat sj_dirs.txt)
@@ -60,6 +66,8 @@ task build {
         [experiments]
         samples=$(cat samples.txt)
         EOF
+        echo "settings file contains:"
+        cat settings.ini
 
         majiq build -j 4 -c settings.ini -o . ~{gff3} --incremental \
         --disable-ir --disable-denovo --disable-denovo-ir \
