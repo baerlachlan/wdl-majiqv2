@@ -47,7 +47,7 @@ task splice_junctions {
     String sj_out = if compress then "~{id}.sj.gz" else "~{id}.sj"
 
     command <<<
-        cat << 'EOF' > settings.ini
+        cat << EOF > settings.ini
         [info]
         bamdirs=$(dirname ~{bam})
         genome=~{ref_genome}
