@@ -8,6 +8,9 @@ workflow majiq_build {
         String ref_genome
         String dest_gs_uri = "NULL"
         String remove_bam_suffix = ".bam"
+        Int machine_cpu = 1
+        Int machine_mem_gb = 4
+        Int machine_disk_gb = 20
     }
 
     call build {
@@ -18,6 +21,9 @@ workflow majiq_build {
         ref_genome = ref_genome,
         dest_gs_uri = dest_gs_uri,
         remove_bam_suffix = remove_bam_suffix,
+        machine_cpu = machine_cpu,
+        machine_mem_gb = machine_mem_gb,
+        machine_disk_gb = machine_disk_gb,
     }
 
     output {
@@ -34,29 +40,22 @@ task build {
         String ref_genome
         String dest_gs_uri
         String remove_bam_suffix
+        Int machine_cpu
+        Int machine_mem_gb
+        Int machine_disk_gb
     }
-
-    ## Determine disk request based on input
-    Int input_size_gb = ceil(size(sj, "GB")) + ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
-    Int disk_size_gb = input_size_gb + length(bam) * 5 + 50  # Add 5GB buffer for each sample output plus some extra
 
     command <<<
         for f in ~{sep=" " bam}; do
             mv ${f} ${f%~{remove_bam_suffix}}.bam
             basename ${f} ~{remove_bam_suffix}
         done | sort | uniq | paste -sd, - > samples.txt
-        echo "samples are:"
-        cat samples.txt
         for f in ~{sep=" " bam}; do
             dirname ${f}
         done | sort | uniq | paste -sd, - > bam_dirs.txt
-        echo "bam_dirs are:"
-        cat bam_dirs.txt
         for f in ~{sep=" " sj}; do
             dirname ${f}
         done | sort | uniq | paste -sd, - > sj_dirs.txt
-        echo "sj_dirs are:"
-        cat sj_dirs.txt
 
         cat << EOF > settings.ini
         [info]
@@ -66,7 +65,14 @@ task build {
         [experiments]
         samples=$(cat samples.txt)
         EOF
-        echo "settings file contains:"
+
+        echo "samples are:"
+        cat samples.txt
+        echo "bam_dirs are:"
+        cat bam_dirs.txt
+        echo "sj_dirs are:"
+        cat sj_dirs.txt
+        echo "settings.ini contains:"
         cat settings.ini
 
         majiq build -j 4 -c settings.ini -o . ~{gff3} --incremental \
@@ -85,9 +91,9 @@ task build {
 
     runtime {
         docker: "baerlachlan/majiq:v2.5.8"
-        cpu: 4
-        memory: "4 GB"
-        disks: "local-disk ~{disk_size_gb} HDD"
+        cpu: machine_cpu
+        memory: "~{machine_mem_gb} GB"
+        disks: "local-disk ~{machine_disk_gb} HDD"
     }
 
     output {
