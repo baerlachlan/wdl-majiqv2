@@ -46,6 +46,8 @@ task build {
     }
 
     command <<<
+        echo "Begin command block"
+
         for f in ~{sep=" " bam}; do
             mv ${f} ${f%~{remove_bam_suffix}}.bam
             basename ${f} ~{remove_bam_suffix}
