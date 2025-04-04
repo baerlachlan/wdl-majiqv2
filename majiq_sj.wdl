@@ -8,6 +8,9 @@ workflow majiq_sj {
         String dest_gs_uri = "NULL"
         String remove_bam_suffix = ".bam"
         Boolean compress = true
+        Int machine_cpu = 1
+        Int machine_mem_gb = 4
+        Int machine_disk_gb = 20
     }
 
     scatter(i in range(length(bam))) {
@@ -20,6 +23,9 @@ workflow majiq_sj {
             dest_gs_uri = dest_gs_uri,
             remove_bam_suffix = remove_bam_suffix,
             compress = compress,
+            machine_cpu = machine_cpu,
+            machine_mem_gb = machine_mem_gb,
+            machine_disk_gb = machine_disk_gb,
         }
     }
 
@@ -37,11 +43,11 @@ task splice_junctions {
         String dest_gs_uri
         String remove_bam_suffix
         Boolean compress
+        Int machine_cpu
+        Int machine_mem_gb
+        Int machine_disk_gb
     }
 
-    ## Determine disk request based on input
-    Int input_size_gb = ceil(size(bam, "GB")) + ceil(size(gff3, "GB"))
-    Int disk_size_gb = input_size_gb + 5  # Add buffer
     String sample = basename(bam, ".bam")
     String id = basename(bam, remove_bam_suffix)
     String sj_out = if compress then "~{id}.sj.gz" else "~{id}.sj"
@@ -54,12 +60,6 @@ task splice_junctions {
         [experiments]
         sample=~{sample}
         EOF
-        echo "New settings.ini:"
-        cat settings.ini
-
-        echo -e "[info]\nbamdirs=$(dirname ~{bam})\ngenome=~{ref_genome}\n[experiments]\nsample=~{sample}" > old_settings.ini
-        echo "Old settings.ini:"
-        cat old_settings.ini
 
         majiq build -j 1 -c settings.ini -o . ~{gff3} --junc-files-only
         mv ~{sample}.sj ~{id}.sj
@@ -74,9 +74,9 @@ task splice_junctions {
 
     runtime {
         docker: "baerlachlan/majiq:v2.5.8"
-        cpu: 1
-        memory: "4 GB"
-        disks: "local-disk ~{disk_size_gb} HDD"
+        cpu: machine_cpu
+        memory: "~{machine_mem_gb} GB"
+        disks: "local-disk ~{machine_disk_gb} HDD"
     }
 
     output {
