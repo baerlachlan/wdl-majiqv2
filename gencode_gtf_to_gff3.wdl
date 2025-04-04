@@ -37,11 +37,8 @@ task gtf_to_gff3 {
         agat config --expose
         ## Turn off checks etc
         sed -i -E '/^(check|remove_orphan)/s/:.*/: false/' agat_config.yaml
-        ## Patch GTF to use Ensembl chromosome names
-        cat ~{gencode_gtf} | \
-            sed 's/chrM/chrMT/;s/chr//' > patched.gtf
         ## Convert GTF to GFF3
-        agat_convert_sp_gxf2gxf.pl -g patched.gtf -o ~{gff3_out}
+        agat_convert_sp_gxf2gxf.pl -g ~{gencode_gtf} -o ~{gff3_out}
         ## Copy to gcloud storage
         if [[ ~{dest_gs_uri} != "NULL" ]]; then
             gsutil cp ~{gff3_out} ~{dest_gs_uri}
